@@ -24,7 +24,6 @@ func (c *Client) DeployAll(ctx context.Context) (*DeployedAddresses, error) {
 
 	addresses := &DeployedAddresses{}
 
-	// 1. Деплой IssuerRegistry
 	fmt.Println("Deploying IssuerRegistry...")
 	issuerAddr, tx, issuerContract, err := contracts.DeployIssuerRegistry(
 		auth,
@@ -41,14 +40,13 @@ func (c *Client) DeployAll(ctx context.Context) (*DeployedAddresses, error) {
 
 	addresses.IssuerRegistry = issuerAddr
 	c.issuerRegistry = issuerContract
-	fmt.Printf("✓ IssuerRegistry deployed at: %s\n", issuerAddr.Hex())
+	fmt.Printf("IssuerRegistry deployed at: %s\n", issuerAddr.Hex())
 
-	// 2. Деплой VerificationRegistry
 	fmt.Println("Deploying VerificationRegistry...")
 	verAddr, tx, verContract, err := contracts.DeployVerificationRegistry(
 		auth,
 		c.ethClient,
-		issuerAddr, // передаем адрес IssuerRegistry
+		issuerAddr,
 	)
 	if err != nil {
 		return nil, fmt.Errorf("failed to deploy VerificationRegistry: %w", err)
@@ -61,15 +59,14 @@ func (c *Client) DeployAll(ctx context.Context) (*DeployedAddresses, error) {
 
 	addresses.VerificationRegistry = verAddr
 	c.verificationRegistry = verContract
-	fmt.Printf("✓ VerificationRegistry deployed at: %s\n", verAddr.Hex())
+	fmt.Printf("VerificationRegistry deployed at: %s\n", verAddr.Hex())
 
-	// 3. Деплой NFT
 	fmt.Println("Deploying VerifiedDocumentNFT...")
 	nftAddr, tx, nftContract, err := contracts.DeployVerifiedDocumentNFT(
 		auth,
 		c.ethClient,
-		"Verified Documents", // название коллекции
-		"VDOC",               // символ
+		"Verified Documents",
+		"VDOC",
 	)
 	if err != nil {
 		return nil, fmt.Errorf("failed to deploy NFT: %w", err)
@@ -82,12 +79,10 @@ func (c *Client) DeployAll(ctx context.Context) (*DeployedAddresses, error) {
 
 	addresses.NFT = nftAddr
 	c.nft = nftContract
-	fmt.Printf("✓ VerifiedDocumentNFT deployed at: %s\n", nftAddr.Hex())
+	fmt.Printf("VerifiedDocumentNFT deployed at: %s\n", nftAddr.Hex())
 
-	// 4. Настройка связей между контрактами
 	fmt.Println("\nSetting up contract relationships...")
 
-	// NFT -> VerificationRegistry
 	tx, err = c.nft.SetVerificationRegistry(auth, verAddr)
 	if err != nil {
 		return nil, fmt.Errorf("failed to set verification registry in NFT: %w", err)
@@ -96,9 +91,8 @@ func (c *Client) DeployAll(ctx context.Context) (*DeployedAddresses, error) {
 	if err != nil {
 		return nil, err
 	}
-	fmt.Println("✓ NFT linked to VerificationRegistry")
+	fmt.Println("NFT linked to VerificationRegistry")
 
-	// VerificationRegistry -> NFT
 	tx, err = c.verificationRegistry.SetNFTContract(auth, nftAddr)
 	if err != nil {
 		return nil, fmt.Errorf("failed to set NFT contract in registry: %w", err)
@@ -107,9 +101,13 @@ func (c *Client) DeployAll(ctx context.Context) (*DeployedAddresses, error) {
 	if err != nil {
 		return nil, err
 	}
-	fmt.Println("✓ VerificationRegistry linked to NFT")
+	fmt.Println("VerificationRegistry linked to NFT")
 
-	fmt.Println("\n🎉 All contracts deployed and configured!")
+	fmt.Println("\nAll contracts deployed and configured!")
+
+	c.issuerRegistryAddr = addresses.IssuerRegistry
+	c.verificationRegistryAddr = addresses.VerificationRegistry
+	c.nftContractAddr = addresses.NFT
 
 	return addresses, nil
 }

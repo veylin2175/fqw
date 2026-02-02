@@ -18,7 +18,6 @@ func NewIssuerService(client *blockchain.Client) *IssuerService {
 	return &IssuerService{client: client}
 }
 
-// AddTrustedIssuer добавляет доверенную организацию
 func (s *IssuerService) AddTrustedIssuer(ctx context.Context, issuerAddress common.Address) error {
 	auth, err := s.client.GetAdminTransactor()
 	if err != nil {
@@ -39,13 +38,12 @@ func (s *IssuerService) AddTrustedIssuer(ctx context.Context, issuerAddress comm
 		return fmt.Errorf("transaction reverted")
 	}
 
-	fmt.Printf("✓ Issuer %s added successfully (tx: %s)\n",
+	fmt.Printf("Issuer %s added successfully (tx: %s)\n",
 		issuerAddress.Hex(), tx.Hash().Hex())
 
 	return nil
 }
 
-// RemoveTrustedIssuer удаляет доверенную организацию
 func (s *IssuerService) RemoveTrustedIssuer(ctx context.Context, issuerAddress common.Address) error {
 	auth, err := s.client.GetAdminTransactor()
 	if err != nil {
@@ -66,13 +64,12 @@ func (s *IssuerService) RemoveTrustedIssuer(ctx context.Context, issuerAddress c
 		return fmt.Errorf("transaction reverted")
 	}
 
-	fmt.Printf("✓ Issuer %s removed successfully (tx: %s)\n",
+	fmt.Printf("Issuer %s removed successfully (tx: %s)\n",
 		issuerAddress.Hex(), tx.Hash().Hex())
 
 	return nil
 }
 
-// IsTrustedIssuer проверяет, является ли адрес доверенным
 func (s *IssuerService) IsTrustedIssuer(ctx context.Context, issuerAddress common.Address) (bool, error) {
 	callOpts := &bind.CallOpts{Context: ctx}
 
@@ -84,7 +81,6 @@ func (s *IssuerService) IsTrustedIssuer(ctx context.Context, issuerAddress commo
 	return isTrusted, nil
 }
 
-// GetOwner возвращает адрес владельца контракта
 func (s *IssuerService) GetOwner(ctx context.Context) (common.Address, error) {
 	callOpts := &bind.CallOpts{Context: ctx}
 
@@ -96,7 +92,6 @@ func (s *IssuerService) GetOwner(ctx context.Context) (common.Address, error) {
 	return owner, nil
 }
 
-// TransferOwnership передает права владельца
 func (s *IssuerService) TransferOwnership(ctx context.Context, newOwner common.Address) error {
 	auth, err := s.client.GetAdminTransactor()
 	if err != nil {
@@ -117,7 +112,7 @@ func (s *IssuerService) TransferOwnership(ctx context.Context, newOwner common.A
 		return fmt.Errorf("transaction reverted")
 	}
 
-	fmt.Printf("✓ Ownership transferred to %s (tx: %s)\n",
+	fmt.Printf("Ownership transferred to %s (tx: %s)\n",
 		newOwner.Hex(), tx.Hash().Hex())
 
 	return nil

@@ -26,8 +26,6 @@ func NewVerificationService(client *blockchain.Client) *VerificationService {
 	return &VerificationService{client: client}
 }
 
-// RegisterVerification регистрирует факт верификации документа
-// Возвращает tokenID для последующего минтинга NFT
 func (s *VerificationService) RegisterVerification(
 	ctx context.Context,
 	vcHash [32]byte,
@@ -58,11 +56,10 @@ func (s *VerificationService) RegisterVerification(
 		return nil, fmt.Errorf("transaction reverted")
 	}
 
-	// Парсим событие VerificationRegistered для получения tokenId
 	for _, log := range receipt.Logs {
 		event, err := s.client.VerificationRegistry().ParseVerificationRegistered(*log)
 		if err == nil {
-			fmt.Printf("✓ Verification registered (tokenId: %s, tx: %s)\n",
+			fmt.Printf("Verification registered (tokenId: %s, tx: %s)\n",
 				event.TokenId.String(), tx.Hash().Hex())
 			return event.TokenId, nil
 		}
@@ -71,7 +68,6 @@ func (s *VerificationService) RegisterVerification(
 	return nil, fmt.Errorf("failed to parse VerificationRegistered event")
 }
 
-// RevokeVerification отзывает верификацию
 func (s *VerificationService) RevokeVerification(
 	ctx context.Context,
 	tokenId *big.Int,
@@ -96,13 +92,12 @@ func (s *VerificationService) RevokeVerification(
 		return fmt.Errorf("transaction reverted")
 	}
 
-	fmt.Printf("✓ Verification revoked (tokenId: %s, tx: %s)\n",
+	fmt.Printf("Verification revoked (tokenId: %s, tx: %s)\n",
 		tokenId.String(), tx.Hash().Hex())
 
 	return nil
 }
 
-// VerifyDocument проверяет подлинность документа по tokenId и vcHash
 func (s *VerificationService) VerifyDocument(
 	ctx context.Context,
 	tokenId *big.Int,
@@ -128,7 +123,6 @@ func (s *VerificationService) VerifyDocument(
 	}, nil
 }
 
-// GetTokenCounter возвращает текущий счетчик токенов
 func (s *VerificationService) GetTokenCounter(ctx context.Context) (*big.Int, error) {
 	callOpts := &bind.CallOpts{Context: ctx}
 
@@ -140,12 +134,10 @@ func (s *VerificationService) GetTokenCounter(ctx context.Context) (*big.Int, er
 	return counter, nil
 }
 
-// GetVerificationDetails возвращает детали верификации по tokenId
 func (s *VerificationService) GetVerificationDetails(
 	ctx context.Context,
 	tokenId *big.Int,
 ) (*VerificationResult, error) {
 
-	// Используем нулевой хэш чтобы получить все данные без валидации
 	return s.VerifyDocument(ctx, tokenId, [32]byte{})
 }

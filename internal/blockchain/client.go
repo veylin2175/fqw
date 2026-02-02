@@ -18,30 +18,29 @@ type Client struct {
 	ethClient *ethclient.Client
 	chainID   *big.Int
 
-	// Контракты
 	issuerRegistry       *contracts.IssuerRegistry
 	verificationRegistry *contracts.VerificationRegistry
 	nft                  *contracts.VerifiedDocumentNFT
 
-	// Приватные ключи
+	issuerRegistryAddr       common.Address
+	verificationRegistryAddr common.Address
+	nftContractAddr          common.Address
+
 	adminKey  *ecdsa.PrivateKey
 	issuerKey *ecdsa.PrivateKey
 }
 
 func NewClient(cfg *Config) (*Client, error) {
-	// Подключение к ноде
 	ethClient, err := ethclient.Dial(cfg.RPCURL)
 	if err != nil {
 		return nil, fmt.Errorf("failed to connect to ethereum node: %w", err)
 	}
 
-	// Проверка подключения
 	chainID, err := ethClient.ChainID(context.Background())
 	if err != nil {
 		return nil, fmt.Errorf("failed to get chain ID: %w", err)
 	}
 
-	// Загрузка приватных ключей
 	adminKey, err := crypto.HexToECDSA(cfg.AdminPrivateKey)
 	if err != nil {
 		return nil, fmt.Errorf("invalid admin private key: %w", err)
@@ -59,7 +58,6 @@ func NewClient(cfg *Config) (*Client, error) {
 		issuerKey: issuerKey,
 	}
 
-	// Подключение к контрактам (если адреса указаны)
 	if cfg.IssuerRegistryAddr != (common.Address{}) {
 		if err = client.ConnectToContracts(cfg); err != nil {
 			return nil, fmt.Errorf("failed to connect to contracts: %w", err)
@@ -72,7 +70,10 @@ func NewClient(cfg *Config) (*Client, error) {
 func (c *Client) ConnectToContracts(cfg *Config) error {
 	var err error
 
-	// IssuerRegistry
+	c.issuerRegistryAddr = cfg.IssuerRegistryAddr
+	c.verificationRegistryAddr = cfg.VerificationRegistryAddr
+	c.nftContractAddr = cfg.NFTContractAddr
+
 	c.issuerRegistry, err = contracts.NewIssuerRegistry(
 		cfg.IssuerRegistryAddr,
 		c.ethClient,
@@ -81,7 +82,6 @@ func (c *Client) ConnectToContracts(cfg *Config) error {
 		return fmt.Errorf("failed to load IssuerRegistry: %w", err)
 	}
 
-	// VerificationRegistry
 	c.verificationRegistry, err = contracts.NewVerificationRegistry(
 		cfg.VerificationRegistryAddr,
 		c.ethClient,
@@ -90,7 +90,6 @@ func (c *Client) ConnectToContracts(cfg *Config) error {
 		return fmt.Errorf("failed to load VerificationRegistry: %w", err)
 	}
 
-	// NFT
 	c.nft, err = contracts.NewVerifiedDocumentNFT(
 		cfg.NFTContractAddr,
 		c.ethClient,
@@ -102,20 +101,15 @@ func (c *Client) ConnectToContracts(cfg *Config) error {
 	return nil
 }
 
-// Создание transactor для отправки транзакций
 func (c *Client) getTransactor(privateKey *ecdsa.PrivateKey) (*bind.TransactOpts, error) {
 	auth, err := bind.NewKeyedTransactorWithChainID(privateKey, c.chainID)
 	if err != nil {
 		return nil, err
 	}
 
-	// Можно настроить gas limit, gas price и т.д.
-	// auth.GasLimit = 3000000
-
 	return auth, nil
 }
 
-// Геттеры для контрактов
 func (c *Client) IssuerRegistry() *contracts.IssuerRegistry {
 	return c.issuerRegistry
 }
@@ -134,17 +128,26 @@ func (c *Client) Close() {
 	}
 }
 
-// GetAdminTransactor возвращает transactor для администратора
 func (c *Client) GetAdminTransactor() (*bind.TransactOpts, error) {
 	return c.getTransactor(c.adminKey)
 }
 
-// GetIssuerTransactor возвращает transactor для issuer'а
 func (c *Client) GetIssuerTransactor() (*bind.TransactOpts, error) {
 	return c.getTransactor(c.issuerKey)
 }
 
-// EthClient возвращает ethclient для прямого доступа
 func (c *Client) EthClient() *ethclient.Client {
 	return c.ethClient
+}
+
+func (c *Client) IssuerRegistryAddr() common.Address {
+	return c.issuerRegistryAddr
+}
+
+func (c *Client) VerificationRegistryAddr() common.Address {
+	return c.verificationRegistryAddr
+}
+
+func (c *Client) NFTContractAddr() common.Address {
+	return c.nftContractAddr
 }
