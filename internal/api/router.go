@@ -1,6 +1,8 @@
 package api
 
 import (
+	"net/http"
+
 	"github.com/gin-gonic/gin"
 
 	"fqw/internal/blockchain"
@@ -22,6 +24,8 @@ func SetupRouter(cfg *RouterConfig) *gin.Engine {
 	handler := NewHandler(cfg.Client)
 
 	router.GET("/health", handler.HealthCheck)
+	router.StaticFS("/web", http.Dir("web"))
+	router.GET("/", func(c *gin.Context) { c.Redirect(http.StatusMovedPermanently, "/web/") })
 
 	v1 := router.Group("/api/v1")
 	{
